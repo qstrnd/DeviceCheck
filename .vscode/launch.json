@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:DeviceCheck}/DeviceCheckServer",
+            "name": "Debug App (DeviceCheckServer)",
+            "program": "${workspaceFolder:DeviceCheck}/DeviceCheckServer/.build/debug/App",
+            "preLaunchTask": "swift: Build Debug App (DeviceCheckServer)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:DeviceCheck}/DeviceCheckServer",
+            "name": "Release App (DeviceCheckServer)",
+            "program": "${workspaceFolder:DeviceCheck}/DeviceCheckServer/.build/release/App",
+            "preLaunchTask": "swift: Build Release App (DeviceCheckServer)"
+        }
+    ]
+}

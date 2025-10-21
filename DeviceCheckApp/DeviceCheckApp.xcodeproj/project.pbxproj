@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		A1D8D76E2EA6B78F006773DF /* DeviceCheck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeviceCheck.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1D8D76E2EA6B78F006773DF /* DeviceCheckApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeviceCheckApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A1D8D7702EA6B78F006773DF /* DeviceCheck */ = {
+		A1D8D7702EA6B78F006773DF /* DeviceCheckApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DeviceCheck;
+			path = DeviceCheckApp;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		A1D8D7652EA6B78F006773DF = {
 			isa = PBXGroup;
 			children = (
-				A1D8D7702EA6B78F006773DF /* DeviceCheck */,
+				A1D8D7702EA6B78F006773DF /* DeviceCheckApp */,
 				A1D8D76F2EA6B78F006773DF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		A1D8D76F2EA6B78F006773DF /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A1D8D76E2EA6B78F006773DF /* DeviceCheck.app */,
+				A1D8D76E2EA6B78F006773DF /* DeviceCheckApp.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A1D8D76D2EA6B78F006773DF /* DeviceCheck */ = {
+		A1D8D76D2EA6B78F006773DF /* DeviceCheckApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A1D8D7792EA6B791006773DF /* Build configuration list for PBXNativeTarget "DeviceCheck" */;
+			buildConfigurationList = A1D8D7792EA6B791006773DF /* Build configuration list for PBXNativeTarget "DeviceCheckApp" */;
 			buildPhases = (
 				A1D8D76A2EA6B78F006773DF /* Sources */,
 				A1D8D76B2EA6B78F006773DF /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A1D8D7702EA6B78F006773DF /* DeviceCheck */,
+				A1D8D7702EA6B78F006773DF /* DeviceCheckApp */,
 			);
-			name = DeviceCheck;
+			name = DeviceCheckApp;
 			packageProductDependencies = (
 			);
 			productName = DeviceCheck;
-			productReference = A1D8D76E2EA6B78F006773DF /* DeviceCheck.app */;
+			productReference = A1D8D76E2EA6B78F006773DF /* DeviceCheckApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A1D8D7692EA6B78F006773DF /* Build configuration list for PBXProject "DeviceCheck" */;
+			buildConfigurationList = A1D8D7692EA6B78F006773DF /* Build configuration list for PBXProject "DeviceCheckApp" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A1D8D76D2EA6B78F006773DF /* DeviceCheck */,
+				A1D8D76D2EA6B78F006773DF /* DeviceCheckApp */,
 			);
 		};
 /* End PBXProject section */
@@ -313,7 +313,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1D8D7692EA6B78F006773DF /* Build configuration list for PBXProject "DeviceCheck" */ = {
+		A1D8D7692EA6B78F006773DF /* Build configuration list for PBXProject "DeviceCheckApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1D8D7772EA6B791006773DF /* Debug */,
@@ -322,7 +322,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A1D8D7792EA6B791006773DF /* Build configuration list for PBXNativeTarget "DeviceCheck" */ = {
+		A1D8D7792EA6B791006773DF /* Build configuration list for PBXNativeTarget "DeviceCheckApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1D8D77A2EA6B791006773DF /* Debug */,
