@@ -77,12 +77,47 @@ The server will start on `http://localhost:8080`
 
 **Note:** DeviceCheck APIs only work on physical iOS devices, not in the simulator.
 
-### 4. Configure Backend Endpoint (Optional)
+### 4. Configure Backend Endpoint for iPhone Access
 
-If running the server on a different machine or port, update the endpoint in the iOS app:
+To access the server from your iPhone, you need to configure the iOS app to use your Mac's local IP address instead of `localhost`.
 
-1. Open `DeviceCheckApp/DeviceCheck/Constants.swift`
-2. Update `baseURL` to point to your server:
+#### Step 1: Find Your Mac's Local IP Address
+
+1. Open **System Settings** (or **System Preferences** on older macOS)
+2. Go to **Network**
+3. Select your active Wi-Fi connection
+4. Note your **IP Address** (e.g., `192.168.1.100`)
+
+Alternatively, use Terminal:
+```bash
+ipconfig getifaddr en0
+```
+(Replace `en0` with your active network interface if different)
+
+#### Step 2: Ensure Both Devices Are on the Same Network
+
+Make sure your iPhone and Mac are connected to the same Wi-Fi network.
+
+#### Step 3: Update the iOS App Configuration
+
+1. Open `DeviceCheckApp/DeviceCheckApp/Constants.swift`
+2. Replace `localhost` with your Mac's IP address:
+   ```swift
+   static let baseURL = "http://192.168.1.100:8080"
+   ```
+   (Replace `192.168.1.100` with your actual IP address)
+
+#### Step 4: Configure Firewall (if needed)
+
+If your Mac's firewall blocks incoming connections:
+
+1. Open **System Settings** → **Network** → **Firewall**
+2. Click **Options** or **Firewall Options**
+3. Ensure incoming connections are allowed for the Vapor server, or temporarily disable the firewall for testing
+
+#### Alternative: Using a Different Machine or Port
+
+If running the server on a different machine or port, update `baseURL` accordingly:
    ```swift
    static let baseURL = "http://your-server-address:8080"
    ```

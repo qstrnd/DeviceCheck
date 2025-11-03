@@ -9,7 +9,7 @@ import Foundation
 
 struct Constants {
     // Backend configuration
-    static let baseURL = "http://localhost:8080"
+    static let baseURL = "http://192.168.178.31:8080"
     
     // Device Identification endpoints
     static let deviceIdentificationQueryURL = "\(baseURL)/api/device/query"
