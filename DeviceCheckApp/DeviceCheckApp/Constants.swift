@@ -17,6 +17,7 @@ struct Constants {
     static let deviceIdentificationValidateURL = "\(baseURL)/api/device/validate"
     
     // App Attest endpoints
+    static let appAttestChallengeURL = "\(baseURL)/api/attest/challenge"
     static let appAttestValidateURL = "\(baseURL)/api/attest/validate"
     static let appAttestAssertionURL = "\(baseURL)/api/attest/assertion"
 }

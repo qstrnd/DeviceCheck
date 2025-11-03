@@ -18,6 +18,7 @@ actor BackgroundActor {
 class DeviceIdentificationViewModel: ObservableObject {
     @Published var associatedBit0: Int?
     @Published var associatedBit1: Int?
+    @Published var deviceToken: String?
     @Published var statusMessage: String = ""
     @Published var isError: Bool = false
     @Published var isLoading: Bool = false
@@ -46,6 +47,7 @@ class DeviceIdentificationViewModel: ObservableObject {
         do {
             // Generate device token
             let token = try await deviceCheckService.generateToken()
+            deviceToken = token.base64EncodedString()
             
             // Send to backend
             let response = try await sendQueryRequest(token: token)
@@ -89,6 +91,7 @@ class DeviceIdentificationViewModel: ObservableObject {
         do {
             // Generate device token
             let token = try await deviceCheckService.generateToken()
+            deviceToken = token.base64EncodedString()
             
             // Send to backend with selected bit values
             try await sendUpdateRequest(token: token, bit0: selectedBit0 == 1, bit1: selectedBit1 == 1)
@@ -121,6 +124,7 @@ class DeviceIdentificationViewModel: ObservableObject {
         do {
             // Generate device token
             let token = try await deviceCheckService.generateToken()
+            deviceToken = token.base64EncodedString()
             
             // Send to backend
             let response = try await sendValidationRequest(token: token)

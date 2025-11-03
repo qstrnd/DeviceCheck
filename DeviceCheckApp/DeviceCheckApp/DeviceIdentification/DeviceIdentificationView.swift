@@ -15,6 +15,16 @@ struct DeviceIdentificationView: View {
             ZStack {
                 ScrollView {
                     VStack(spacing: 30) {
+                        // Device Token Display
+                        VStack(spacing: 20) {
+                            CopyableTextFieldView(
+                                value: viewModel.deviceToken,
+                                title: "Device Token"
+                            )
+                        }
+                        .padding(.top, 40)
+                        .padding(.horizontal, 20)
+                        
                         // Bits Display
                         VStack(spacing: 20) {
                             Text("Device Bits")
@@ -26,7 +36,6 @@ struct DeviceIdentificationView: View {
                                 BitView(value: viewModel.associatedBit1)
                             }
                         }
-                        .padding(.top, 40)
                         
                         // Action Buttons
                         VStack(spacing: 16) {
