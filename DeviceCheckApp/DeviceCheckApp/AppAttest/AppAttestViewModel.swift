@@ -38,16 +38,14 @@ class AppAttestViewModel: ObservableObject {
         isError = false
         
         do {
-            let response = try await sendChallengeRequest()
-            if let challengeValue = response["challenge"] as? String {
-                challenge = challengeValue
-                currentChallenge = challengeValue
-                statusMessage = "Challenge fetched successfully"
-                isError = false
-            } else {
-                statusMessage = "Invalid response from server"
-                isError = true
-            }
+            let response: ChallengeResponse = try await NetworkService.performRequest(
+                url: Constants.appAttestChallengeURL,
+                method: "GET"
+            )
+            challenge = response.challenge
+            currentChallenge = response.challenge
+            statusMessage = "Challenge fetched successfully"
+            isError = false
         } catch {
             statusMessage = "Failed to fetch challenge: \(error.localizedDescription)"
             isError = true
@@ -121,19 +119,18 @@ class AppAttestViewModel: ObservableObject {
             let attestationObject = try await appAttestService.attestKey(keyId, clientDataHash: challengeData)
             
             // Send to backend for validation
-            let response = try await sendAttestationRequest(
-                keyId: keyId,
-                attestation: attestationObject,
-                challenge: challenge
+            let response: AttestationResponse = try await NetworkService.performRequest(
+                url: Constants.appAttestValidateURL,
+                method: "POST",
+                body: AttestationRequest(
+                    keyId: keyId,
+                    attestation: attestationObject.base64EncodedString(),
+                    challenge: challenge
+                )
             )
             
-            if let success = response["success"] as? Bool, success {
-                statusMessage = response["message"] as? String ?? "Attestation validated successfully"
-                isError = false
-            } else {
-                statusMessage = response["message"] as? String ?? "Attestation validation failed"
-                isError = true
-            }
+            statusMessage = response.message
+            isError = !response.success
         } catch {
             statusMessage = "Failed to attest key: \(error.localizedDescription)"
             isError = true
@@ -181,28 +178,27 @@ class AppAttestViewModel: ObservableObject {
             let assertionObject = try await appAttestService.generateAssertion(keyId, clientDataHash: challengeData)
             
             // Create client data JSON
-            let clientDataDict: [String: Any] = [
-                "challenge": challenge,
-                "type": "webauthn.create"
-            ]
-            let clientDataJSON = try JSONSerialization.data(withJSONObject: clientDataDict)
+            struct ClientData: Codable {
+                let challenge: String
+                let type: String
+            }
+            let clientData = ClientData(challenge: challenge, type: "webauthn.create")
+            let clientDataJSON = try JSONEncoder().encode(clientData)
             
             // Send to backend for validation
-            let response = try await sendAssertionRequest(
-                keyId: keyId,
-                assertion: assertionObject,
-                clientData: clientDataJSON.base64EncodedString()
+            let response: AssertionResponse = try await NetworkService.performRequest(
+                url: Constants.appAttestAssertionURL,
+                method: "POST",
+                body: AssertionRequest(
+                    keyId: keyId,
+                    assertion: assertionObject.base64EncodedString(),
+                    clientData: clientDataJSON.base64EncodedString()
+                )
             )
             
-            if let success = response["success"] as? Bool, success {
-                let counter = response["counter"] as? Int ?? 0
-                let message = response["message"] as? String ?? "Assertion validated successfully"
-                statusMessage = "\(message)\nCounter: \(counter)"
-                isError = false
-            } else {
-                statusMessage = response["message"] as? String ?? "Assertion validation failed"
-                isError = true
-            }
+            let counter = response.counter ?? 0
+            statusMessage = "\(response.message)\nCounter: \(counter)"
+            isError = !response.success
         } catch {
             statusMessage = "Failed to create assertion: \(error.localizedDescription)"
             isError = true
@@ -212,88 +208,5 @@ class AppAttestViewModel: ObservableObject {
         isLoading = false
     }
     
-    // MARK: - Network Requests
-    
-    private func sendChallengeRequest() async throws -> [String: Any] {
-        guard let url = URL(string: Constants.appAttestChallengeURL) else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw NetworkError.invalidResponse
-        }
-        
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw NetworkError.invalidData
-        }
-        
-        return json
-    }
-    
-    private func sendAttestationRequest(keyId: String, attestation: Data, challenge: String) async throws -> [String: Any] {
-        guard let url = URL(string: Constants.appAttestValidateURL) else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body: [String: String] = [
-            "keyId": keyId,
-            "attestation": attestation.base64EncodedString(),
-            "challenge": challenge
-        ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw NetworkError.invalidResponse
-        }
-        
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw NetworkError.invalidData
-        }
-        
-        return json
-    }
-    
-    private func sendAssertionRequest(keyId: String, assertion: Data, clientData: String) async throws -> [String: Any] {
-        guard let url = URL(string: Constants.appAttestAssertionURL) else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body: [String: String] = [
-            "keyId": keyId,
-            "assertion": assertion.base64EncodedString(),
-            "clientData": clientData
-        ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw NetworkError.invalidResponse
-        }
-        
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw NetworkError.invalidData
-        }
-        
-        return json
-    }
 }
 

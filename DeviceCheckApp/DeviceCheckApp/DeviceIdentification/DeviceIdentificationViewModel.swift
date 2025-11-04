@@ -50,19 +50,17 @@ class DeviceIdentificationViewModel: ObservableObject {
             deviceToken = token.base64EncodedString()
             
             // Send to backend
-            let response = try await sendQueryRequest(token: token)
+            let response: DeviceQueryResponse = try await NetworkService.performRequest(
+                url: Constants.deviceIdentificationQueryURL,
+                method: "POST",
+                body: DeviceQueryRequest(device_token: deviceToken!)
+            )
             
             // Update bits from response
-            if let bit0 = response["bit0"] as? Bool,
-               let bit1 = response["bit1"] as? Bool {
-                associatedBit0 = bit0 ? 1 : 0
-                associatedBit1 = bit1 ? 1 : 0
-                statusMessage = "Query successful"
-                isError = false
-            } else {
-                statusMessage = "Invalid response from server"
-                isError = true
-            }
+            associatedBit0 = response.bit0 ? 1 : 0
+            associatedBit1 = response.bit1 ? 1 : 0
+            statusMessage = "Query successful"
+            isError = false
         } catch {
             statusMessage = "Query failed: \(error.localizedDescription)"
             isError = true
@@ -94,7 +92,15 @@ class DeviceIdentificationViewModel: ObservableObject {
             deviceToken = token.base64EncodedString()
             
             // Send to backend with selected bit values
-            try await sendUpdateRequest(token: token, bit0: selectedBit0 == 1, bit1: selectedBit1 == 1)
+            try await NetworkService.performRequest(
+                url: Constants.deviceIdentificationUpdateURL,
+                method: "POST",
+                body: DeviceUpdateRequest(
+                    device_token: deviceToken!,
+                    bit0: selectedBit0 == 1,
+                    bit1: selectedBit1 == 1
+                )
+            )
             
             associatedBit0 = selectedBit0
             associatedBit1 = selectedBit1
@@ -127,15 +133,14 @@ class DeviceIdentificationViewModel: ObservableObject {
             deviceToken = token.base64EncodedString()
             
             // Send to backend
-            let response = try await sendValidationRequest(token: token)
+            let response: DeviceValidationResponse = try await NetworkService.performRequest(
+                url: Constants.deviceIdentificationValidateURL,
+                method: "POST",
+                body: DeviceValidationRequest(device_token: deviceToken!)
+            )
             
-            if let isValid = response["isValid"] as? Bool {
-                statusMessage = isValid ? "Device is valid" : "Device is not valid"
-                isError = !isValid
-            } else {
-                statusMessage = "Invalid response from server"
-                isError = true
-            }
+            statusMessage = response.isValid ? "Device is valid" : "Device is not valid"
+            isError = !response.isValid
         } catch {
             statusMessage = "Validation failed: \(error.localizedDescription)"
             isError = true
@@ -145,103 +150,5 @@ class DeviceIdentificationViewModel: ObservableObject {
         isLoading = false
     }
     
-    // MARK: - Network Requests
-    
-    private func sendQueryRequest(token: Data) async throws -> [String: Any] {
-        guard let url = URL(string: Constants.deviceIdentificationQueryURL) else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body: [String: String] = [
-            "device_token": token.base64EncodedString()
-        ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw NetworkError.invalidResponse
-        }
-        
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw NetworkError.invalidData
-        }
-        
-        return json
-    }
-    
-    private func sendUpdateRequest(token: Data, bit0: Bool, bit1: Bool) async throws {
-        guard let url = URL(string: Constants.deviceIdentificationUpdateURL) else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body: [String: Any] = [
-            "device_token": token.base64EncodedString(),
-            "bit0": bit0,
-            "bit1": bit1
-        ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (_, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw NetworkError.invalidResponse
-        }
-    }
-    
-    private func sendValidationRequest(token: Data) async throws -> [String: Any] {
-        guard let url = URL(string: Constants.deviceIdentificationValidateURL) else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body: [String: String] = [
-            "device_token": token.base64EncodedString()
-        ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw NetworkError.invalidResponse
-        }
-        
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw NetworkError.invalidData
-        }
-        
-        return json
-    }
-}
-
-enum NetworkError: Error, LocalizedError {
-    case invalidURL
-    case invalidResponse
-    case invalidData
-    
-    var errorDescription: String? {
-        switch self {
-        case .invalidURL:
-            return "Invalid URL"
-        case .invalidResponse:
-            return "Invalid response from server"
-        case .invalidData:
-            return "Invalid data received"
-        }
-    }
 }
 
