@@ -286,6 +286,10 @@ swift test
 - [App Attest Documentation](https://developer.apple.com/documentation/devicecheck/validating_apps_that_connect_to_your_server)
 - [Vapor Documentation](https://docs.vapor.codes)
 
+## Attribution
+
+- App icon: [Mobile Phone Icon](https://www.flaticon.com/free-icon/check_14622071?term=mobile+phone&page=1&position=31&origin=search&related_id=14622071) from [Flaticon](https://www.flaticon.com/)
+
 ## License
 
 See LICENSE.txt for details.
