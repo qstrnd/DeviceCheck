@@ -56,10 +56,15 @@ class DeviceIdentificationViewModel: ObservableObject {
                 body: DeviceQueryRequest(device_token: deviceToken!)
             )
             
-            // Update bits from response
-            associatedBit0 = response.bit0 ? 1 : 0
-            associatedBit1 = response.bit1 ? 1 : 0
-            statusMessage = "Query successful"
+            // Update bits from response (handle nil values)
+            associatedBit0 = response.bit0 != nil ? (response.bit0! ? 1 : 0) : nil
+            associatedBit1 = response.bit1 != nil ? (response.bit1! ? 1 : 0) : nil
+            
+            if response.bit0 == nil && response.bit1 == nil {
+                statusMessage = "Query successful (no bits set)"
+            } else {
+                statusMessage = "Query successful"
+            }
             isError = false
         } catch {
             statusMessage = "Query failed: \(error.localizedDescription)"

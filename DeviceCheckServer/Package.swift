@@ -9,12 +9,15 @@ let package = Package(
     dependencies: [
         // Vapor framework
         .package(url: "https://github.com/vapor/vapor.git", from: "4.89.0"),
+        // JWTKit for JWT token generation
+        .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.0.0"),
     ],
     targets: [
         .executableTarget(
             name: "App",
             dependencies: [
-                .product(name: "Vapor", package: "vapor")
+                .product(name: "Vapor", package: "vapor"),
+                .product(name: "JWTKit", package: "jwt-kit")
             ],
             path: "Sources/App"
         ),

@@ -10,3 +10,6 @@ DerivedData
 *.p8
 .env
 
+# Private configuration file with sensitive data
+Sources/**/PrivateConstants.swift
+

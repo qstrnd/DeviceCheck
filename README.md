@@ -24,21 +24,72 @@ This repository contains two main components:
 
 ### 1. Configure the Server
 
-Before running the server, you need to configure your Apple credentials:
+Before running the server, you need to configure your Apple credentials.
 
-1. Open `DeviceCheckServer/Sources/App/Constants.swift`
-2. Update the following constants:
-   ```swift
-   static let bundleID = "com.yourcompany.DeviceCheck"  // Your app's bundle ID
-   static let teamID = "YOUR_TEAM_ID"                   // Your Apple Team ID
-   static let authKeyID = "YOUR_KEY_ID"                 // Your Auth Key ID
-   ```
+#### Step 1: Create PrivateConstants.swift
 
-3. For production use with Apple's DeviceCheck API:
-   - Generate an authentication key in Apple Developer Portal
-   - Download the `.p8` key file
-   - Place it in the `DeviceCheckServer` directory
-   - Update `authKeyPath` in Constants.swift if needed
+Create a new file at `DeviceCheckServer/Sources/App/PrivateConstants.swift` with the following structure:
+
+```swift
+import Foundation
+
+struct PrivateConstants {
+    static let authKeyPath = "./Resources/AuthKey.p8"
+    static let authKeyID = "YOUR_KEY_ID"
+    static let teamID = "YOUR_TEAM_ID"
+}
+```
+
+#### Step 2: Add Your Authentication Key
+
+1. Go to [Apple Developer Portal - Keys](https://developer.apple.com/account/resources/authkeys/list)
+2. Create a new key with **DeviceCheck** capability enabled
+3. Download the `.p8` key file (⚠️ **You can only download it once!**)
+4. Copy the downloaded file to `DeviceCheckServer/Resources/AuthKey.p8`
+
+#### Step 3: Update Your Credentials
+
+Open `DeviceCheckServer/Sources/App/PrivateConstants.swift` and fill in your actual values:
+
+**Finding Your Credentials:**
+
+- **`authKeyID`** (Key ID): Your 10-character Key ID
+  - **Location 1:** Apple Developer Portal > Certificates, Identifiers & Profiles > Keys
+  - **Location 2:** In the filename of your downloaded .p8 file: `AuthKey_<KEY_ID>.p8`
+  - **Format:** 10-character string (e.g., `ABC123DEFG`)
+
+- **`teamID`** (Team ID): Your 10-character Team ID
+  - **Location:** Apple Developer Portal > Membership
+  - **Format:** 10-character string (e.g., `ABCD123456`)
+
+**Example with actual values:**
+
+```swift
+import Foundation
+
+struct PrivateConstants {
+    static let authKeyPath = "./Resources/AuthKey.p8"
+    static let authKeyID = "ABC123DEFG"
+    static let teamID = "ABCD123456"
+}
+```
+
+**File Structure After Setup:**
+
+```
+DeviceCheckServer/
+├── Resources/
+│   └── AuthKey.p8                    # Your actual .p8 key file (NOT in git)
+└── Sources/
+    └── App/
+        └── PrivateConstants.swift    # Your actual config (NOT in git)
+```
+
+**Security Notes:**
+
+- ✅ `PrivateConstants.swift` is in `.gitignore` - your secrets won't be committed
+- ✅ `AuthKey.p8` files are in `.gitignore` - your keys won't be committed
+- ⚠️ Never commit your actual credentials to the repository
 
 ### 2. Running the Server
 
@@ -142,17 +193,57 @@ The App Attest tab is a placeholder for App Attest functionality. The server inc
 - Attestation validation
 - Assertion validation
 
-## Demo Mode
+## Debugging with Proxyman
 
-**Important:** The current implementation runs in **demo mode**. The server simulates responses from Apple's DeviceCheck API without making actual calls to Apple's servers.
+You can use [Proxyman](https://proxyman.com/) to inspect the HTTP requests your server makes to Apple's DeviceCheck API.
 
-To integrate with Apple's real DeviceCheck API:
+### Method 1: Automatic Setup (Recommended)
 
-1. Configure your Apple Developer account credentials
-2. Implement JWT token generation for Apple API authentication
-3. Update the controller methods to make actual HTTP requests to Apple's DeviceCheck endpoints
-4. Add proper CBOR parsing for App Attest attestation and assertion objects
-5. Implement cryptographic verification of App Attest signatures
+1. Open Proxyman
+2. Go to **Setup** → **Automatic Setup**
+3. Click **Open New Terminal**
+4. In the new Terminal window, navigate to your project and run:
+   ```bash
+   cd DeviceCheckServer
+   swift run
+   ```
+5. All HTTP/HTTPS traffic from this Terminal session will be captured by Proxyman
+
+### Method 2: Programmatic Proxy Configuration
+
+The server supports proxy configuration via environment variables:
+
+```bash
+cd DeviceCheckServer
+USE_PROXY=true PROXY_HOST=localhost PROXY_PORT=9090 swift run
+```
+
+**Environment Variables:**
+- `USE_PROXY=true` - Enable proxy (set to "true" to enable)
+- `PROXY_HOST` - Proxy hostname (default: "localhost")
+- `PROXY_PORT` - Proxy port (default: 9090)
+
+**Proxyman Default Ports:**
+- HTTP: `9090`
+- HTTPS: `9091`
+
+**Note:** For HTTPS traffic to Apple's API, you may need to trust Proxyman's certificate. Proxyman will guide you through this process.
+
+## Implementation Status
+
+**Device Identification:** ✅ **Fully Implemented**
+- Real integration with Apple's DeviceCheck API
+- JWT token generation with ES256 signing
+- Query and update device bits functionality
+- Comprehensive logging for debugging
+
+**App Attest:** ⚠️ **Placeholder Implementation**
+- Server includes endpoints for challenge generation, attestation, and assertion validation
+- Currently returns mock responses
+- To fully implement:
+  1. Add proper CBOR parsing for App Attest attestation and assertion objects
+  2. Implement cryptographic verification of App Attest signatures
+  3. Store public keys for assertion validation
 
 ## Architecture
 

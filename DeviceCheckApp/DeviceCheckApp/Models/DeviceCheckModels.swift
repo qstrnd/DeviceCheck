@@ -14,9 +14,9 @@ struct DeviceQueryRequest: Codable {
 }
 
 struct DeviceQueryResponse: Codable {
-    let bit0: Bool
-    let bit1: Bool
-    let last_update_time: String
+    let bit0: Bool?
+    let bit1: Bool?
+    let last_update_time: String?
 }
 
 struct DeviceUpdateRequest: Codable {

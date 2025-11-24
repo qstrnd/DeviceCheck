@@ -20,17 +20,25 @@ struct DeviceIdentificationController: RouteCollection {
         
         req.logger.info("Querying device with token: \(request.device_token.prefix(20))...")
         
-        // In a real implementation, you would:
-        // 1. Send the device token to Apple's DeviceCheck API
-        // 2. Retrieve the two bits and last update time
-        // 3. Return the values to the client
+        // Use DeviceCheckService to query Apple's DeviceCheck API
+        let service = DeviceCheckService(app: req.application)
         
-        // For this demo, we'll return mock data
-        return DeviceQueryResponse(
-            bit0: false,
-            bit1: true,
-            last_update_time: ISO8601DateFormatter().string(from: Date())
-        )
+        do {
+            let response = try await service.queryDeviceBits(deviceToken: request.device_token)
+            req.logger.info("Successfully queried device bits: bit0=\(response.bit0?.description ?? "nil"), bit1=\(response.bit1?.description ?? "nil")")
+            return response
+        } catch DeviceCheckError.missingAuthKey, DeviceCheckError.invalidAuthKey {
+            req.logger.warning("DeviceCheck authentication key not configured, returning nil mock data")
+            // Fallback to nil mock data if auth key is not configured
+            return DeviceQueryResponse(
+                bit0: nil,
+                bit1: nil,
+                last_update_time: nil
+            )
+        } catch {
+            req.logger.error("Error querying device bits: \(error)")
+            throw error
+        }
     }
     
     // Update device bits
