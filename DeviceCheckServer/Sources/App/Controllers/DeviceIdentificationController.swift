@@ -48,13 +48,25 @@ struct DeviceIdentificationController: RouteCollection {
         req.logger.info("Updating device with token: \(request.device_token.prefix(20))...")
         req.logger.info("Setting bit0=\(request.bit0), bit1=\(request.bit1)")
         
-        // In a real implementation, you would:
-        // 1. Send the device token and bit values to Apple's DeviceCheck API
-        // 2. Update the two bits
-        // 3. Handle any errors from Apple's API
+        // Use DeviceCheckService to update Apple's DeviceCheck API
+        let service = DeviceCheckService(app: req.application)
         
-        // For this demo, we'll simulate success
-        return DeviceUpdateResponse(success: true)
+        do {
+            let response = try await service.updateDeviceBits(
+                deviceToken: request.device_token,
+                bit0: request.bit0,
+                bit1: request.bit1
+            )
+            req.logger.info("Successfully updated device bits: success=\(response.success)")
+            return response
+        } catch DeviceCheckError.missingAuthKey, DeviceCheckError.invalidAuthKey {
+            req.logger.warning("DeviceCheck authentication key not configured, returning mock success")
+            // Fallback to mock success if auth key is not configured
+            return DeviceUpdateResponse(success: true)
+        } catch {
+            req.logger.error("Error updating device bits: \(error)")
+            throw error
+        }
     }
     
     // Validate device

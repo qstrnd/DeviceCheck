@@ -102,42 +102,26 @@ struct DeviceCheckService {
         return token
     }
     
-    // Query device bits from Apple's DeviceCheck API
-    func queryDeviceBits(deviceToken: String) async throws -> DeviceQueryResponse {
+    // MARK: - Helper Methods
+    
+    /// Makes an authenticated request to Apple's DeviceCheck API
+    private func makeDeviceCheckRequest<T: Content>(
+        endpoint: String,
+        requestBody: T
+    ) async throws -> ClientResponse {
         // Generate JWT token
         app.logger.info("🔐 Starting JWT generation for DeviceCheck API")
         let jwt = try generateJWT()
         app.logger.info("✅ JWT generated successfully")
         
-        // Generate a unique transaction ID (UUID)
-        let transactionId = UUID().uuidString
-        
-        // Generate timestamp in milliseconds since Unix epoch
-        let timestamp = Int64(Date().timeIntervalSince1970 * 1000)
-        
         // Prepare the request
-        let url = "\(Constants.deviceCheckAPIURL)/query_two_bits"
+        let url = "\(Constants.deviceCheckAPIURL)/\(endpoint)"
         
         app.logger.info("📤 Calling Apple DeviceCheck API: \(url)")
-        app.logger.info("📤 Request body: device_token=\(deviceToken.prefix(20))..., transaction_id=\(transactionId), timestamp=\(timestamp)")
         let envString = Constants.apiEnvironment == .development ? "development" : "production"
         app.logger.info("📤 API Environment: \(envString)")
         
-        // Create request body struct
-        struct AppleDeviceCheckQueryRequest: Content {
-            let device_token: String
-            let transaction_id: String
-            let timestamp: Int64
-        }
-        
-        let requestBody = AppleDeviceCheckQueryRequest(
-            device_token: deviceToken,
-            transaction_id: transactionId,
-            timestamp: timestamp
-        )
-        
         // Make the HTTP request
-        // Ensure JWT is properly formatted for Authorization header
         let authHeader = "Bearer \(jwt)"
         app.logger.info("🔑 Authorization header length: \(authHeader.count) characters")
         app.logger.info("🔑 Authorization header (first 100 chars): \(authHeader.prefix(100))...")
@@ -158,13 +142,27 @@ struct DeviceCheckService {
             throw DeviceCheckError.apiError("Apple DeviceCheck API returned status \(response.status.code): \(body)")
         }
         
-        // Parse the response
-        let deviceCheckResponse: AppleDeviceCheckQueryResponse
+        return response
+    }
+    
+    /// Decodes query response with fallback to string logging
+    private func decodeQueryResponse(from response: ClientResponse) -> DeviceQueryResponse {
         do {
-            deviceCheckResponse = try response.content.decode(AppleDeviceCheckQueryResponse.self)
+            let deviceCheckResponse = try response.content.decode(AppleDeviceCheckQueryResponse.self)
             
             // Log response data
             app.logger.info("📥 Apple DeviceCheck API response: bit0=\(deviceCheckResponse.bit0?.description ?? "nil"), bit1=\(deviceCheckResponse.bit1?.description ?? "nil"), last_update_time=\(deviceCheckResponse.last_update_time ?? "nil")")
+            
+            // Convert to our response format (preserve nil values)
+            let clientResponse = DeviceQueryResponse(
+                bit0: deviceCheckResponse.bit0,
+                bit1: deviceCheckResponse.bit1,
+                last_update_time: deviceCheckResponse.last_update_time
+            )
+            
+            app.logger.info("📤 Returning to client: bit0=\(clientResponse.bit0?.description ?? "nil"), bit1=\(clientResponse.bit1?.description ?? "nil"), last_update_time=\(clientResponse.last_update_time ?? "nil")")
+            
+            return clientResponse
         } catch {
             // If decoding fails, try to decode as string and log it
             app.logger.warning("❌ Failed to decode DeviceCheck response as expected format")
@@ -183,17 +181,63 @@ struct DeviceCheckService {
                 last_update_time: nil
             )
         }
+    }
+    
+    // MARK: - Public API Methods
+    
+    // Query device bits from Apple's DeviceCheck API
+    func queryDeviceBits(deviceToken: String) async throws -> DeviceQueryResponse {
+        // Generate request parameters
+        let transactionId = UUID().uuidString
+        let timestamp = Int64(Date().timeIntervalSince1970 * 1000)
         
-        // Convert to our response format (preserve nil values)
-        let clientResponse = DeviceQueryResponse(
-            bit0: deviceCheckResponse.bit0,
-            bit1: deviceCheckResponse.bit1,
-            last_update_time: deviceCheckResponse.last_update_time
+        app.logger.info("📤 Request body: device_token=\(deviceToken.prefix(20))..., transaction_id=\(transactionId), timestamp=\(timestamp)")
+        
+        // Create request body
+        let requestBody = AppleDeviceCheckQueryRequest(
+            device_token: deviceToken,
+            transaction_id: transactionId,
+            timestamp: timestamp
         )
         
-        app.logger.info("📤 Returning to client: bit0=\(clientResponse.bit0?.description ?? "nil"), bit1=\(clientResponse.bit1?.description ?? "nil"), last_update_time=\(clientResponse.last_update_time ?? "nil")")
+        // Make the request
+        let response = try await makeDeviceCheckRequest(
+            endpoint: "query_two_bits",
+            requestBody: requestBody
+        )
         
-        return clientResponse
+        // Decode and return response
+        return decodeQueryResponse(from: response)
+    }
+    
+    // Update device bits on Apple's DeviceCheck API
+    func updateDeviceBits(deviceToken: String, bit0: Bool, bit1: Bool) async throws -> DeviceUpdateResponse {
+        // Generate request parameters
+        let transactionId = UUID().uuidString
+        let timestamp = Int64(Date().timeIntervalSince1970 * 1000)
+        
+        app.logger.info("📤 Request body: device_token=\(deviceToken.prefix(20))..., bit0=\(bit0), bit1=\(bit1), transaction_id=\(transactionId), timestamp=\(timestamp)")
+        
+        // Create request body
+        let requestBody = AppleDeviceCheckUpdateRequest(
+            device_token: deviceToken,
+            transaction_id: transactionId,
+            timestamp: timestamp,
+            bit0: bit0,
+            bit1: bit1
+        )
+        
+        // Make the request
+        let response = try await makeDeviceCheckRequest(
+            endpoint: "update_two_bits",
+            requestBody: requestBody
+        )
+        
+        // If status is 200, consider it successful (ignore response body)
+        app.logger.info("📥 Apple DeviceCheck API update response: status=\(response.status.code)")
+        app.logger.info("📤 Returning to client: success=true")
+        
+        return DeviceUpdateResponse(success: true)
     }
 }
 
@@ -210,7 +254,21 @@ struct DeviceCheckJWTPayload: JWTPayload {
     }
 }
 
-// MARK: - Apple API Response Models
+// MARK: - Apple API Request/Response Models
+
+struct AppleDeviceCheckQueryRequest: Content {
+    let device_token: String
+    let transaction_id: String
+    let timestamp: Int64
+}
+
+struct AppleDeviceCheckUpdateRequest: Content {
+    let device_token: String
+    let transaction_id: String
+    let timestamp: Int64
+    let bit0: Bool
+    let bit1: Bool
+}
 
 struct AppleDeviceCheckQueryResponse: Content {
     let bit0: Bool?
