@@ -183,22 +183,28 @@ struct DeviceCheckService {
         }
     }
     
-    // MARK: - Public API Methods
+    // MARK: - Helper Methods for Request Formation
     
-    // Query device bits from Apple's DeviceCheck API
-    func queryDeviceBits(deviceToken: String) async throws -> DeviceQueryResponse {
-        // Generate request parameters
+    /// Creates a base device check request body with device_token, transaction_id, and timestamp
+    private func createBaseDeviceCheckRequest(deviceToken: String) -> AppleDeviceCheckQueryRequest {
         let transactionId = UUID().uuidString
         let timestamp = Int64(Date().timeIntervalSince1970 * 1000)
         
         app.logger.info("📤 Request body: device_token=\(deviceToken.prefix(20))..., transaction_id=\(transactionId), timestamp=\(timestamp)")
         
-        // Create request body
-        let requestBody = AppleDeviceCheckQueryRequest(
+        return AppleDeviceCheckQueryRequest(
             device_token: deviceToken,
             transaction_id: transactionId,
             timestamp: timestamp
         )
+    }
+    
+    // MARK: - Public API Methods
+    
+    // Query device bits from Apple's DeviceCheck API
+    func queryDeviceBits(deviceToken: String) async throws -> DeviceQueryResponse {
+        // Create request body
+        let requestBody = createBaseDeviceCheckRequest(deviceToken: deviceToken)
         
         // Make the request
         let response = try await makeDeviceCheckRequest(
@@ -238,6 +244,27 @@ struct DeviceCheckService {
         app.logger.info("📤 Returning to client: success=true")
         
         return DeviceUpdateResponse(success: true)
+    }
+    
+    // Validate device token on Apple's DeviceCheck API
+    func validateDeviceToken(deviceToken: String) async throws -> DeviceValidationResponse {
+        // Create request body (same as query)
+        let requestBody = createBaseDeviceCheckRequest(deviceToken: deviceToken)
+        
+        // Make the request
+        let response = try await makeDeviceCheckRequest(
+            endpoint: "validate_device_token",
+            requestBody: requestBody
+        )
+        
+        // If status is 200, consider it successful (ignore response body)
+        app.logger.info("📥 Apple DeviceCheck API validation response: status=\(response.status.code)")
+        app.logger.info("📤 Returning to client: isValid=true")
+        
+        return DeviceValidationResponse(
+            isValid: true,
+            message: "Device validation successful"
+        )
     }
 }
 

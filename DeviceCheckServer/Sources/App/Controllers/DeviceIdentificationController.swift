@@ -75,16 +75,24 @@ struct DeviceIdentificationController: RouteCollection {
         
         req.logger.info("Validating device with token: \(request.device_token.prefix(20))...")
         
-        // In a real implementation, you would:
-        // 1. Send the device token to Apple's DeviceCheck API
-        // 2. Check if the device has been previously flagged
-        // 3. Apply your custom validation logic
+        // Use DeviceCheckService to validate Apple's DeviceCheck API
+        let service = DeviceCheckService(app: req.application)
         
-        // For this demo, we'll simulate a valid device
-        return DeviceValidationResponse(
-            isValid: true,
-            message: "Device validation successful (demo mode)"
-        )
+        do {
+            let response = try await service.validateDeviceToken(deviceToken: request.device_token)
+            req.logger.info("Successfully validated device: isValid=\(response.isValid)")
+            return response
+        } catch DeviceCheckError.missingAuthKey, DeviceCheckError.invalidAuthKey {
+            req.logger.warning("DeviceCheck authentication key not configured, returning mock validation")
+            // Fallback to mock validation if auth key is not configured
+            return DeviceValidationResponse(
+                isValid: true,
+                message: "Device validation successful (demo mode)"
+            )
+        } catch {
+            req.logger.error("Error validating device: \(error)")
+            throw error
+        }
     }
 }
 
