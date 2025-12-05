@@ -2,6 +2,8 @@
 
 A comprehensive sample application demonstrating Apple's DeviceCheck API, including Device Identification and App Attest features.
 
+![Demo video](DeviceCheckDemoVideo.gif)
+
 ## Project Structure
 
 This repository contains two main components:
